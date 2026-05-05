@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 Country Detective</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cs:60px;--bg:#f8f8ff;--panel:#ffffff;--border:#d0d8f0;
+  --gold:#c89010;--cyan:#0088cc;--red:#cc2020;
+  --green:#1a8840;--dim:#6070a0;--text:#1a2040;
+  --auto:#108850;
+  --cs: clamp(42px, calc((100vh - 230px) / 8), calc((100vw - 280px) / 9));
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100vh;overflow:hidden;}
+body{background:linear-gradient(135deg,#f0f4ff 0%,#e8eeff 60%,#f4f8ff 100%);color:var(--text);font-family:'Courier Prime',monospace;overflow:hidden;height:100vh;}
+body::before{content:'';display:none;position:fixed;inset:0;background:linear-gradient(135deg,#f0f4ff 0%,#e8eeff 50%,#f4f8ff 100%);pointer-events:none;z-index:0;}
+
+.screen{display:none;height:100vh;max-height:100vh;position:relative;z-index:1;overflow:hidden;}
+.screen.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* ── BUTTONS ── */
+.btn{font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;padding:12px 26px;border:none;cursor:pointer;transition:all .2s;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);}
+.btn-gold{background:var(--gold);color:#07080f;}
+.btn-gold:hover{background:#ffc840;transform:scale(1.02);box-shadow:0 0 18px rgba(240,180,40,.35);}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);clip-path:none;font-size:10px;padding:9px 16px;}
+.btn-ghost:hover{border-color:#444;color:var(--text);}
+.btn-green{background:rgba(64,232,160,.12);color:var(--auto);border:1px solid rgba(64,232,160,.3);clip-path:none;font-size:10px;padding:9px 16px;cursor:pointer;transition:all .2s;}
+.btn-green:hover{background:rgba(64,232,160,.25);}
+
+/* ══════════════════════════
+   LOBBY
+══════════════════════════ */
+#lobby{align-items:center;padding:30px 20px;gap:20px;background:linear-gradient(135deg,#f0f4ff,#e8eeff);justify-content:center;}
+.lobby-eye{font-size:9px;letter-spacing:6px;color:var(--dim);text-align:center;}
+.lobby-title{font-family:'Bebas Neue',sans-serif;font-size:60px;color:#9a7000;letter-spacing:6px;text-align:center;line-height:1;}
+.lobby-sub{font-size:10px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:4px;}
+
+/* team strip */
+.team-strip{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:900px;width:100%;background:var(--panel);border:1px solid var(--border);padding:14px 20px;}
+.ti-wrap{display:flex;flex-direction:column;gap:3px;}
+.ti-lbl{font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
+.ti{background:transparent;border:none;border-bottom:2px solid var(--border);color:var(--text);font-family:'Special Elite',cursive;font-size:14px;padding:4px 3px;width:120px;outline:none;transition:border-color .2s;}
+.ti:focus{border-color:var(--gold);}
+.score-mini{display:flex;gap:16px;margin-left:auto;}
+.sm-box{text-align:center;}
+.sm-name{font-size:7px;letter-spacing:2px;color:var(--dim);}
+.sm-pts{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:#1a2040;}
+
+/* country grid */
+.country-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;max-width:900px;width:100%;}
+.cc-card{background:#ffffff;border:1px solid #d0d8f0;padding:18px 12px 14px;cursor:pointer;text-align:center;transition:all .22s;position:relative;overflow:hidden;}
+.cc-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+.cc-card.done{opacity:.4;pointer-events:none;}
+.cc-card.done::after{content:'✓ DONE';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:3px;color:var(--green);background:rgba(0,0,0,.55);}
+.cc-num{font-size:8px;letter-spacing:3px;color:var(--dim);margin-bottom:6px;}
+.cc-icon{font-size:32px;display:block;margin-bottom:7px;}
+.cc-name{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;color:var(--text);letter-spacing:.5px;margin-bottom:2px;line-height:1.2;}
+.cc-diff{font-size:7px;letter-spacing:2px;padding:2px 7px;text-transform:uppercase;display:inline-block;margin-top:5px;}
+.easy{border:1px solid var(--green);color:var(--green);}
+.med{border:1px solid var(--gold);color:var(--gold);}
+.hard{border:1px solid var(--red);color:var(--red);}
+.lobby-bottom{font-size:9px;letter-spacing:2px;color:var(--dim);text-align:center;}
+
+/* ══════════════════════════
+   GAME SCREEN
+══════════════════════════ */
+#game{flex-direction:row;align-items:stretch;height:100vh;overflow:hidden;}
+
+/* LEFT */
+.grid-area{flex:1;display:flex;flex-direction:column;padding:10px 12px;gap:6px;min-width:0;overflow:hidden;height:100vh;}
+.topbar{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.tb-title{font-family:'Bebas Neue',sans-serif;font-size:17px;color:#9a7000;letter-spacing:3px;}
+.tb-hint{font-size:9px;letter-spacing:1px;color:var(--dim);text-align:right;max-width:260px;}
+
+/* timer */
+.timer-block{display:flex;align-items:center;gap:10px;background:#ffffff;border:1px solid #d0d8f0;padding:7px 12px;flex-shrink:0;}
+.t-big{font-family:'Bebas Neue',sans-serif;font-size:38px;color:#1a2040;line-height:1;min-width:52px;text-align:center;transition:color .3s;}
+.t-big.warn{color:var(--gold);}
+.t-big.danger{color:var(--red);animation:tpulse .5s infinite;}
+@keyframes tpulse{0%,100%{opacity:1}50%{opacity:.3}}
+.t-right{flex:1;display:flex;flex-direction:column;gap:4px;}
+.t-bar{height:5px;background:rgba(0,0,80,.08);border-radius:2px;overflow:hidden;}
+.t-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));border-radius:2px;transition:width 1s linear;}
+.t-status{font-size:9px;letter-spacing:1px;color:#3a4060;}
+.t-lbl{font-size:7px;letter-spacing:3px;color:var(--dim);}
+.hint-badge{display:none;background:rgba(0,136,204,.1);border:1px solid rgba(0,136,204,.35);color:#0066aa;font-size:7px;letter-spacing:2px;padding:2px 8px;text-transform:uppercase;}
+.hint-badge.on{display:block;animation:badgeFade 1.5s ease-in-out 4;}
+@keyframes badgeFade{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TOP HINT BANNER */
+.top-hint-banner{
+  display:flex;align-items:flex-start;gap:8px;
+  background:rgba(200,144,16,.08);border:1px solid rgba(200,144,16,.3);
+  padding:7px 12px;flex-shrink:0;
+}
+.thb-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.thb-label{font-size:8px;letter-spacing:3px;color:#9a7000;text-transform:uppercase;margin-bottom:3px;}
+.thb-text{font-family:'Special Elite',cursive;font-size:12px;color:#2a3050;line-height:1.3;}
+
+/* GRID */
+.grid-container{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.grid-outer{display:inline-flex;flex-direction:column;}
+.col-labels{display:flex;gap:2px;padding-left:26px;margin-bottom:2px;}
+.col-lbl{width:54px;height:18px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--gold);}
+.grid-rows{display:flex;flex-direction:column;gap:2px;}
+.grid-row{display:flex;gap:2px;align-items:center;}
+.row-lbl{width:22px;height:54px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--gold);flex-shrink:0;}
+.cell{width:54px;height:54px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:24px;background:#f0f4ff;border:1px solid var(--border);cursor:pointer;transition:all .14s;color:var(--text);border-radius:3px;user-select:none;}
+.cell:hover:not(.found):not(.found-auto){background:rgba(0,136,204,.12);border-color:rgba(0,136,204,.5);color:#0044aa;}
+.cell.start{background:rgba(0,136,204,.18);border-color:#0088cc;color:#0055aa;box-shadow:0 0 8px rgba(0,136,204,.25);}
+.cell.selecting{background:rgba(0,136,204,.1);border-color:rgba(0,136,204,.5);color:#0055cc;}
+.cell.found{background:rgba(200,144,16,.15);border-color:#c89010;color:#8a6000;cursor:default;}
+.cell.found-auto{background:rgba(16,136,80,.12);border-color:#108850;color:#0a6030;cursor:default;}
+.cell.wrong{background:rgba(224,48,48,.18);border-color:var(--red);color:var(--red);animation:wrongPop .4s ease;}
+@keyframes wrongPop{0%,100%{transform:scale(1)}50%{transform:scale(.9)}}
+
+/* RIGHT sidebar */
+.sidebar{width:230px;flex-shrink:0;display:flex;flex-direction:column;gap:7px;padding:12px;border-left:1px solid var(--border);background:rgba(245,248,255,.9);overflow:hidden;height:100vh;}
+.sb-lbl{font-size:7px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:4px;}
+.score-duo{display:flex;gap:5px;}
+.sbox{flex:1;background:#fff;border:1px solid var(--border);padding:5px 6px;text-align:center;}
+.sbox-name{font-size:7px;letter-spacing:2px;color:var(--dim);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sbox-pts{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;color:#1a2040;}
+.found-pill{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);padding:5px 10px;}
+.fp-n{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#9a7000;line-height:1;}
+.fp-l{font-size:7px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;text-align:right;}
+
+/* clue cards */
+.clue-list{display:flex;flex-direction:column;gap:3px;}
+.ccard{background:var(--panel);border:1px solid var(--border);padding:7px 10px;transition:border-color .3s,background .3s;min-height:36px;display:flex;align-items:center;}
+/* HIDDEN */
+.ccard .v-hidden{display:flex;align-items:center;gap:7px;width:100%;}
+.ccard .v-hint{display:none;flex-direction:column;gap:2px;width:100%;}
+.ccard .v-found{display:none;flex-direction:column;gap:1px;width:100%;}
+/* HINT state */
+.ccard.s-hint{border-color:rgba(0,136,204,.3);background:rgba(0,136,204,.06);}
+.ccard.s-hint .v-hidden{display:none;}
+.ccard.s-hint .v-hint{display:flex;}
+/* FOUND state */
+.ccard.s-found{border-color:rgba(200,144,16,.4);background:rgba(200,144,16,.07);}
+.ccard.s-found .v-hidden,.ccard.s-found .v-hint{display:none;}
+.ccard.s-found .v-found{display:flex;}
+/* AUTO state */
+.ccard.s-auto{border-color:rgba(16,136,80,.35);background:rgba(16,136,80,.06);}
+.ccard.s-auto .v-hidden,.ccard.s-auto .v-hint{display:none;}
+.ccard.s-auto .v-found{display:flex;}
+/* pop anim */
+.ccard.s-found,.ccard.s-auto,.ccard.s-hint{animation:cPop .38s cubic-bezier(.34,1.56,.64,1);}
+@keyframes cPop{from{transform:scaleY(.55);opacity:0}to{transform:scaleY(1);opacity:1}}
+/* card content */
+.cv-dots{font-size:13px;letter-spacing:3px;color:var(--border);}
+.cv-lbl{font-size:7px;letter-spacing:1px;color:var(--dim);}
+.cv-letter{font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--cyan);letter-spacing:2px;}
+.cv-blanks{font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--dim);letter-spacing:4px;}
+.cv-hlbl{font-size:7px;letter-spacing:1px;color:rgba(0,212,255,.45);}
+.cv-wordrow{display:flex;align-items:center;gap:6px;}
+.cv-emoji{font-size:15px;}
+.ccard.s-found .cv-word{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#9a7000;letter-spacing:1px;line-height:1;}
+.ccard.s-auto .cv-word{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#108850;letter-spacing:1px;line-height:1;}
+.cv-type{font-size:7px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+
+/* sidebar bottom */
+.sb-bottom{margin-top:auto;display:flex;flex-direction:column;gap:4px;padding-top:6px;}
+.sb-note{font-size:7px;letter-spacing:1px;color:var(--dim);text-align:center;line-height:1.4;}
+.reveal-btn{width:100%;font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:8px;border:1px solid rgba(16,136,80,.35);background:rgba(16,136,80,.08);color:#108850;cursor:pointer;transition:all .2s;}
+.reveal-btn:hover{background:rgba(16,136,80,.18);border-color:#108850;}
+.reveal-btn:disabled{opacity:.3;cursor:default;}
+.guess-btn-big{width:100%;font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:10px;border:none;cursor:pointer;transition:all .2s;background:#c89010;color:#ffffff;clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);}
+.guess-btn-big:hover{background:#ffc840;box-shadow:0 0 18px rgba(240,180,40,.35);}
+.guess-btn-big.pulse{animation:gPulse 1s ease-in-out infinite;}
+@keyframes gPulse{0%,100%{box-shadow:0 0 0 0 rgba(240,180,40,.4)}50%{box-shadow:0 0 0 8px rgba(240,180,40,0)}}
+
+/* ══════════════════════════
+   REVEAL
+══════════════════════════ */
+#reveal{align-items:center;justify-content:center;gap:20px;padding:36px 20px;background:linear-gradient(135deg,#f0f4ff,#eef8ff);overflow-y:auto;}
+.rev-eye{font-size:9px;letter-spacing:5px;color:var(--dim);text-transform:uppercase;}
+.rev-recap{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:520px;}
+.rr-w{background:rgba(240,180,40,.1);border:1px solid rgba(240,180,40,.28);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;padding:4px 10px;}
+.rr-w.auto{background:rgba(64,232,160,.08);border-color:rgba(64,232,160,.28);color:var(--auto);}
+/* flip */
+.flip-wrap{perspective:900px;}
+.flip-card{width:270px;height:185px;position:relative;transform-style:preserve-3d;transition:transform .85s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
+.flip-card.flipped{transform:rotateY(180deg);}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;}
+.ff-front{background:linear-gradient(135deg,#f0f4ff,#e8eeff);border:2px solid var(--border);}
+.ff-front-icon{font-size:46px;color:var(--dim);opacity:.5;}
+.ff-front-txt{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:4px;color:#6070a0;}
+.ff-front-hint{font-size:8px;letter-spacing:3px;color:rgba(80,100,160,.5);}
+.ff-back{background:linear-gradient(135deg,#fffbe8,#fff8d0);border:2px solid var(--gold);transform:rotateY(180deg);box-shadow:0 0 36px rgba(200,144,16,.2);}
+.rev-flag{font-size:62px;filter:drop-shadow(0 0 14px rgba(240,180,40,.5));}
+.rev-name{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--gold);letter-spacing:6px;}
+/* award */
+.award-wrap{width:100%;max-width:480px;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.aw-lbl{font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
+.aw-row{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;width:100%;}
+.aw-btn{font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 14px;border:none;cursor:pointer;transition:all .2s;flex:1;min-width:130px;}
+.aw-a{background:rgba(42,90,180,.1);color:#1a50cc;border:1px solid #4a80dd;}
+.aw-a:hover{background:rgba(42,90,180,.42);}
+.aw-b{background:rgba(180,42,42,.22);color:#ff8080;border:1px solid #aa2a2a;}
+.aw-b:hover{background:rgba(180,42,42,.42);}
+.aw-both{background:rgba(26,136,64,.1);color:#0a6030;border:1px solid #2a9a50;flex-basis:100%;}
+.aw-both:hover{background:rgba(32,140,80,.38);}
+.aw-none{background:rgba(150,150,170,.12);color:#6070a0;border:1px solid #c0c8e0;flex-basis:100%;font-size:9px;}
+.aw-none:hover{border-color:#444;color:var(--text);}
+.rev-nav{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;}
+
+/* ══════════════════════════
+   CULTURE
+══════════════════════════ */
+#culture{align-items:center;justify-content:center;gap:18px;padding:36px 20px;background:linear-gradient(135deg,#f0fff4,#eefff6);overflow-y:auto;}
+.cult-eye{font-size:9px;letter-spacing:5px;color:var(--dim);text-transform:uppercase;}
+.cult-hl{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);letter-spacing:4px;}
+.cult-box{max-width:600px;width:100%;background:#ffffff;border:1px solid rgba(26,136,64,.25);padding:30px 34px;animation:slideUp .55s cubic-bezier(.22,1,.36,1);}
+@keyframes slideUp{from{transform:translateY(46px);opacity:0}to{transform:translateY(0);opacity:1}}
+.cult-hdr{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+.cult-flag{font-size:30px;}
+.cult-name{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);letter-spacing:3px;}
+.cult-div{height:2px;background:repeating-linear-gradient(90deg,rgba(32,192,96,.2) 0,rgba(32,192,96,.2) 8px,transparent 8px,transparent 14px);margin-bottom:14px;}
+.cult-fact{font-family:'Special Elite',cursive;font-size:16px;line-height:1.9;color:#1a3028;}
+.cult-fact strong{color:var(--green);}
+.cult-nav{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;}
+
+/* ══════════════════════════
+   SCOREBOARD
+══════════════════════════ */
+#scoreboard{align-items:center;justify-content:center;gap:22px;padding:36px 20px;text-align:center;background:linear-gradient(135deg,#fffbf0,#f8f0ff);justify-content:center;}
+.sb-big-title{font-family:'Bebas Neue',sans-serif;font-size:50px;color:var(--gold);letter-spacing:5px;}
+.duel{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.duel-box{background:var(--panel);border:1px solid var(--border);padding:22px 36px;text-align:center;position:relative;min-width:140px;transition:all .3s;}
+.duel-box.win{border-color:var(--gold);box-shadow:0 0 32px rgba(240,180,40,.18);}
+.db-n{font-size:8px;letter-spacing:4px;color:var(--dim);margin-bottom:6px;}
+.db-p{font-family:'Bebas Neue',sans-serif;font-size:60px;line-height:1;}
+.duel-box.win .db-p{color:#b87800;}
+.duel-box:not(.win) .db-p{color:#d0d8f0;}
+.crown{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:22px;}
+.cases-bar{display:flex;gap:8px;font-family:'Courier Prime',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;}
+
+/* toast */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-family:'Bebas Neue',sans-serif;font-size:66px;pointer-events:none;z-index:200;transition:all .28s cubic-bezier(.34,1.56,.64,1);}
+.toast.show{transform:translate(-50%,-50%) scale(1);}
+</style>
+</head>
+<body>
+
+<!-- ██████ LOBBY ██████ -->
+<div id="lobby" class="screen active">
+  <div class="lobby-eye">Country Detective · 10 Countries</div>
+  <div class="lobby-title">COUNTRY<br>DETECTIVE</div>
+  <div class="lobby-sub">Find the words · Decode the clues · Reveal the country</div>
+
+  <div class="team-strip">
+    <div class="ti-wrap">
+      <span class="ti-lbl">🔵 Team A</span>
+      <input class="ti" id="tA" value="The Explorers" maxlength="16">
+    </div>
+    <div class="ti-wrap">
+      <span class="ti-lbl">🔴 Team B</span>
+      <input class="ti" id="tB" value="World Hunters" maxlength="16">
+    </div>
+    <div class="score-mini">
+      <div class="sm-box"><div class="sm-name" id="lbNA">TEAM A</div><div class="sm-pts" style="color:#4a9aee;" id="lbPA">0</div></div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--dim);align-self:center;">VS</div>
+      <div class="sm-box"><div class="sm-name" id="lbNB">TEAM B</div><div class="sm-pts" style="color:#ee4a4a;" id="lbPB">0</div></div>
+    </div>
+    <button class="btn-ghost" onclick="resetScores()" style="margin-left:auto;">↺ RESET</button>
+  </div>
+
+  <div class="country-grid" id="countryGrid"></div>
+
+  <div class="lobby-bottom" id="solvedStatus">SELECT A COUNTRY TO BEGIN · 0 / 10 SOLVED</div>
+</div>
+
+<!-- ██████ GAME ██████ -->
+<div id="game" class="screen">
+
+  <div class="grid-area">
+    <div class="topbar">
+      <div class="tb-title" id="tbTitle">🔍 Country Detective</div>
+      <div class="tb-hint" id="tbHint">Click a letter to start · click another to complete the word</div>
+    </div>
+
+    <div class="timer-block">
+      <div class="t-big" id="tNum">90</div>
+      <div class="t-right">
+        <div class="t-status" id="tStatus">⏱ Search the grid — find the hidden words!</div>
+        <div class="t-bar"><div class="t-fill" id="tFill"></div></div>
+        <div class="t-lbl">SECONDS REMAINING</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <div class="hint-badge" id="hintBadge">💡 HINTS ON</div>
+        <button class="btn-ghost" style="font-size:8px;padding:6px 11px;" onclick="stopTimer()">⏹ STOP</button>
+      </div>
+    </div>
+
+    <!-- TOP HINT BANNER -->
+    <div class="top-hint-banner">
+      <div class="thb-icon">🔍</div>
+      <div>
+        <div class="thb-label">Case Hint</div>
+        <div class="thb-text" id="topHintBanner">Loading hint...</div>
+      </div>
+    </div>
+
+    <div class="grid-container">
+      <div class="grid-outer">
+        <div class="col-labels" id="colLabels"></div>
+        <div class="grid-rows" id="gridRows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-lbl">Scores</div>
+    <div class="score-duo">
+      <div class="sbox"><div class="sbox-name" id="sNA">TEAM A</div><div class="sbox-pts" style="color:#4a9aee;" id="sPA">0</div></div>
+      <div class="sbox"><div class="sbox-name" id="sNB">TEAM B</div><div class="sbox-pts" style="color:#ee4a4a;" id="sPB">0</div></div>
+    </div>
+
+    <div class="found-pill">
+      <div class="fp-n"><span id="foundNum">0</span>/5</div>
+      <div class="fp-l">Words<br>Found</div>
+    </div>
+
+    <div class="sb-lbl">Clues</div>
+    <div class="clue-list" id="clueList"></div>
+
+    <div class="sb-bottom">
+      <div class="sb-note" id="sbNote">Hints reveal at 60s remaining</div>
+      <button class="reveal-btn" id="revealWordsBtn" onclick="revealAll()">✦ REVEAL ALL WORDS</button>
+      <button class="guess-btn-big" id="guessBtn" onclick="goReveal()">REVEAL COUNTRY →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ██████ REVEAL ██████ -->
+<div id="reveal" class="screen">
+  <div class="rev-eye">The mystery country was...</div>
+  <div class="rev-recap" id="revRecap"></div>
+
+  <div class="flip-wrap">
+    <div class="flip-card" id="flipCard" onclick="doFlip()">
+      <div class="flip-face ff-front">
+        <div class="ff-front-icon">🌍</div>
+        <div class="ff-front-txt">MYSTERY COUNTRY</div>
+        <div class="ff-front-hint">Tap to reveal</div>
+      </div>
+      <div class="flip-face ff-back">
+        <div class="rev-flag" id="rFlag">🇯🇵</div>
+        <div class="rev-name" id="rName">JAPAN</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="award-wrap" id="awardWrap" style="display:none;">
+    <div class="aw-lbl">Who guessed it correctly? — Award points</div>
+    <div class="aw-row">
+      <button class="aw-btn aw-a" onclick="award('A')">🔵 <span id="awNA">Team A</span> +<span id="awP1">20</span></button>
+      <button class="aw-btn aw-b" onclick="award('B')">🔴 <span id="awNB">Team B</span> +<span id="awP2">20</span></button>
+      <button class="aw-btn aw-both" onclick="award('BOTH')">🏆 Both Teams +<span id="awP3">20</span> each</button>
+      <button class="aw-btn aw-none" onclick="award('NONE')">Neither — no points</button>
+    </div>
+  </div>
+
+  <div class="rev-nav" id="revNav" style="display:none;">
+    <button class="btn-ghost" onclick="startGame(curIdx)">↺ REPLAY</button>
+    <button class="btn btn-gold" onclick="goCulture()">ANCIENT HISTORY →</button>
+  </div>
+</div>
+
+<!-- ██████ CULTURE ██████ -->
+<div id="culture" class="screen">
+  <div class="cult-eye">Ancient Culture — Did You Know?</div>
+  <div class="cult-hl">🏛️ HISTORY UNLOCKED</div>
+  <div class="cult-box">
+    <div class="cult-hdr">
+      <span class="cult-flag" id="cFlag"></span>
+      <span class="cult-name" id="cName"></span>
+    </div>
+    <div class="cult-div"></div>
+    <div class="cult-fact" id="cFact"></div>
+  </div>
+  <div class="cult-nav">
+    <button class="btn-ghost" onclick="goLobby()">← BACK TO CASES</button>
+    <button class="btn btn-gold" onclick="goScoreboard()">VIEW SCORES →</button>
+  </div>
+</div>
+
+<!-- ██████ SCOREBOARD ██████ -->
+<div id="scoreboard" class="screen">
+  <div class="sb-big-title" id="sbTitle">SCORES</div>
+  <div class="cases-bar" id="casesBar"></div>
+  <div class="duel">
+    <div class="duel-box" id="dbA"><div class="db-n" id="dbNA">TEAM A</div><div class="db-p" id="dbPA">0</div></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--dim);letter-spacing:3px;">VS</div>
+    <div class="duel-box" id="dbB"><div class="db-n" id="dbNB">TEAM B</div><div class="db-p" id="dbPB">0</div></div>
+  </div>
+  <div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;">
+    <button class="btn-ghost" onclick="goLobby()">← BACK</button>
+    <button class="btn-ghost" onclick="resetScores();goLobby();">↺ RESET ALL</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">+20</div>
+
+<!-- ██████████████████████████████████████
+     ALL DATA + GAME LOGIC
+██████████████████████████████████████ -->
+<script>
+// ════════════════════════════════════════
+// ALL 10 COUNTRIES — PLUG AND PLAY DATA
+// ════════════════════════════════════════
+const COUNTRIES = [
+  {
+    name:'Japan', flag:'🇯🇵', diff:'easy',
+    hint:'This country is made up of over 6,800 islands and drives on the left side of the road.',
+    words:[
+      {word:'TOKYO',   emoji:'🏙️', label:'City here'},
+      {word:'SUSHI',   emoji:'🍽️', label:'Famous dish'},
+      {word:'FUJI',    emoji:'🗻', label:'Famous landmark'},
+      {word:'SAMURAI', emoji:'⚔️', label:'Famous for...'},
+      {word:'SAKURA',  emoji:'🌸', label:'Famous for...'},
+    ],
+    culture:'The samurai code of <strong>Bushido</strong> — meaning "way of the warrior" — dates back over 1,000 years. It shaped Japanese honour, discipline and loyalty that echo through Japanese culture to this very day.',
+  },
+  {
+    name:'Italy', flag:'🇮🇹', diff:'easy',
+    hint:'This country is shaped like a boot and has more UNESCO World Heritage Sites than any other nation.',
+    words:[
+      {word:'ROME',     emoji:'🏙️', label:'City here'},
+      {word:'PIZZA',    emoji:'🍽️', label:'Famous dish'},
+      {word:'ROMAN',    emoji:'🏛️', label:'Famous for...'},
+      {word:'FERRARI',  emoji:'🏎️', label:'Famous for...'},
+      {word:'VENICE',   emoji:'🚤', label:'Famous city'},
+    ],
+    culture:'Ancient <strong>Rome invented concrete</strong> over 2,000 years ago — and their formula was so strong that structures like the Pantheon still stand perfectly today, outlasting most modern buildings.',
+  },
+  {
+    name:'India', flag:'🇮🇳', diff:'easy',
+    hint:'This country has the world\'s largest film industry by number of films produced every year.',
+    words:[
+      {word:'MUMBAI',   emoji:'🏙️', label:'City here'},
+      {word:'BIRYANI',  emoji:'🍽️', label:'Famous dish'},
+      {word:'TAJMAHAL', emoji:'🕌', label:'Famous landmark'},
+      {word:'YOGA',     emoji:'🧘', label:'Famous for...'},
+      {word:'CRICKET',  emoji:'🏏', label:'Famous for...'},
+    ],
+    culture:'The <strong>Indus Valley Civilisation</strong> (3300 BC) had running water, sewage systems and planned cities — more advanced than most of Europe at the same time. One of humanity\'s earliest great civilisations.',
+  },
+  {
+    name:'France', flag:'🇫🇷', diff:'medium',
+    hint:'This country is the most visited in the world — attracting over 90 million tourists every single year.',
+    words:[
+      {word:'PARIS',    emoji:'🏙️', label:'City here'},
+      {word:'BAGUETTE', emoji:'🍽️', label:'Famous dish'},
+      {word:'EIFFEL',   emoji:'🗼', label:'Famous landmark'},
+      {word:'FASHION',  emoji:'👗', label:'Famous for...'},
+      {word:'WINE',     emoji:'🍷', label:'Famous for...'},
+    ],
+    culture:'The <strong>Cave paintings of Lascaux</strong> in southern France are over 17,000 years old — making them among the oldest art ever created by human hands, predating all known civilisations.',
+  },
+  {
+    name:'Brazil', flag:'🇧🇷', diff:'medium',
+    hint:'This country covers nearly half of South America and is the only nation there that speaks Portuguese.',
+    words:[
+      {word:'RIO',      emoji:'🏙️', label:'City here'},
+      {word:'TAPIOCA',  emoji:'🍽️', label:'Famous dish'},
+      {word:'CARNIVAL', emoji:'🎭', label:'Famous for...'},
+      {word:'AMAZON',   emoji:'🌿', label:'Famous for...'},
+      {word:'FOOTBALL', emoji:'⚽', label:'Famous for...'},
+    ],
+    culture:'The <strong>Amazon rainforest</strong> was home to the Marajoara civilisation (400 AD) who built complex earthworks and created stunning ceramic art long before Europeans ever arrived in the Americas.',
+  },
+  {
+    name:'Vietnam', flag:'🇻🇳', diff:'medium',
+    hint:'This country is shaped like the letter S and shares borders with China, Laos and Cambodia.',
+    words:[
+      {word:'HANOI',    emoji:'🏙️', label:'City here'},
+      {word:'PHO',      emoji:'🍽️', label:'Famous dish'},
+      {word:'HALONG',   emoji:'⛵', label:'Famous landmark'},
+      {word:'LANTERN',  emoji:'🏮', label:'Famous for...'},
+      {word:'BAMBOO',   emoji:'🎋', label:'Famous for...'},
+    ],
+    culture:'The <strong>Đông Sơn</strong> culture (700 BC) created enormous bronze drums — some weighing over 100kg — used in sacred rituals and traded across all of Southeast Asia, marking one of the region\'s greatest early civilisations.',
+  },
+  {
+    name:'Australia', flag:'🇦🇺', diff:'medium',
+    hint:'This country is also an entire continent and has more species of venomous animals than anywhere else on Earth.',
+    words:[
+      {word:'SYDNEY',   emoji:'🏙️', label:'City here'},
+      {word:'BARBECUE', emoji:'🍽️', label:'Famous dish'},
+      {word:'KANGAROO', emoji:'🦘', label:'Famous animal'},
+      {word:'OPERA',    emoji:'🎭', label:'Famous landmark'},
+      {word:'REEF',     emoji:'🪸', label:'Famous for...'},
+    ],
+    culture:'<strong>Aboriginal Australians</strong> have the world\'s oldest continuous culture — over <strong>65,000 years</strong> old — making them the longest surviving civilisation on Earth, with rich oral traditions, art, and knowledge of the land.',
+  },
+  {
+    name:'Mexico', flag:'🇲🇽', diff:'hard',
+    hint:'This country introduced both chocolate and chilli to the rest of the world.',
+    words:[
+      {word:'CANCUN',   emoji:'🏙️', label:'City here'},
+      {word:'TACOS',    emoji:'🍽️', label:'Famous dish'},
+      {word:'PYRAMID',  emoji:'🔺', label:'Famous landmark'},
+      {word:'SALSA',    emoji:'💃', label:'Famous for...'},
+      {word:'CHILLI',   emoji:'🌶️', label:'Famous for...'},
+    ],
+    culture:'The <strong>Aztec capital Tenochtitlan</strong> (built 1325 AD) was larger than London at the time — a magnificent floating city built on a lake, complete with aqueducts, grand temples and bustling markets.',
+  },
+  {
+    name:'China', flag:'🇨🇳', diff:'hard',
+    hint:'This country has the world\'s largest population and invented paper over 2,000 years ago.',
+    words:[
+      {word:'BEIJING',  emoji:'🏙️', label:'City here'},
+      {word:'DIMSUM',   emoji:'🍽️', label:'Famous dish'},
+      {word:'PANDA',    emoji:'🐼', label:'Famous animal'},
+      {word:'DRAGON',   emoji:'🐉', label:'Famous for...'},
+      {word:'DYNASTY',  emoji:'👑', label:'Famous for...'},
+    ],
+    culture:'China invented <strong>paper, printing, gunpowder and the compass</strong> — four discoveries that literally changed the course of human civilisation and are still the foundation of modern life today.',
+  },
+  {
+    name:'USA', flag:'🇺🇸', diff:'hard',
+    hint:'This country has exactly 50 states and its national bird is the bald eagle.',
+    words:[
+      {word:'NEWYORK',  emoji:'🏙️', label:'City here'},
+      {word:'BURGER',   emoji:'🍽️', label:'Famous dish'},
+      {word:'STATUE',   emoji:'🗽', label:'Famous landmark'},
+      {word:'LIBERTY',  emoji:'🔔', label:'Famous for...'},
+      {word:'BASEBALL', emoji:'⚾', label:'Famous for...'},
+    ],
+    culture:'Long before the USA existed, the <strong>Cahokia</strong> civilisation (900 AD) built a city near modern St. Louis that was larger than London — complete with massive earthen pyramids still visible in the landscape today.',
+  },
+]
+
+// ════════════════════════════════════════
+// CONSTANTS & STATE
+// ════════════════════════════════════════
+const GRID_SIZE = 8;
+const COLS = 'ABCDEFGH';
+const TOTAL_TIME = 90;
+const HINT_AT = 60; // show hints when this many seconds remain
+
+let teamA = 'The Explorers', teamB = 'World Hunters';
+let scoreA = 0, scoreB = 0;
+let solved = new Set();
+let curIdx = 0;
+
+// per-round state
+let grid = [], placements = [], foundWords = new Set();
+let selStart = null;
+let timerInt = null, timeLeft = TOTAL_TIME;
+let foundCnt = 0, hintsOn = false, allRevd = false, flipDone = false;
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════
+// LOBBY
+// ════════════════════════════════════════
+function buildLobby(){
+  teamA = document.getElementById('tA').value || 'Team A';
+  teamB = document.getElementById('tB').value || 'Team B';
+  document.getElementById('lbNA').textContent = teamA.toUpperCase();
+  document.getElementById('lbNB').textContent = teamB.toUpperCase();
+  document.getElementById('lbPA').textContent = scoreA;
+  document.getElementById('lbPB').textContent = scoreB;
+  document.getElementById('solvedStatus').textContent = `SELECT A COUNTRY TO BEGIN · ${solved.size} / 10 SOLVED`;
+
+  const grid = document.getElementById('countryGrid');
+  grid.innerHTML = '';
+  COUNTRIES.forEach((c,i) => {
+    const card = document.createElement('div');
+    card.className = 'cc-card' + (solved.has(i) ? ' done' : '');
+    card.innerHTML = `
+      <div class="cc-num">CASE ${String(i+1).padStart(2,'0')}</div>
+      <span class="cc-icon">🔍</span>
+      <div class="cc-name">MYSTERY<br>COUNTRY</div>
+      <span class="cc-diff ${c.diff}">${c.diff.toUpperCase()}</span>`;
+    card.onclick = () => { teamA=document.getElementById('tA').value||'Team A'; teamB=document.getElementById('tB').value||'Team B'; startGame(i); };
+    grid.appendChild(card);
+  });
+}
+
+function goLobby(){
+  buildLobby();
+  go('lobby');
+}
+
+function resetScores(){
+  scoreA = scoreB = 0;
+  solved.clear();
+  document.getElementById('lbPA').textContent = 0;
+  document.getElementById('lbPB').textContent = 0;
+  buildLobby();
+}
+
+
+// ════════════════════════════════════════
+// START GAME
+// ════════════════════════════════════════
+function startGame(idx){
+  curIdx = idx;
+  const C = COUNTRIES[idx];
+
+  // sync score display
+  document.getElementById('sNA').textContent = teamA.toUpperCase();
+  document.getElementById('sNB').textContent = teamB.toUpperCase();
+  document.getElementById('sPA').textContent = scoreA;
+  document.getElementById('sPB').textContent = scoreB;
+  document.getElementById('tbTitle').textContent = `🔍 ${C.name.toUpperCase()} — COUNTRY DETECTIVE`;
+  document.getElementById('topHintBanner').textContent = C.hint;
+
+
+  // reset round state
+  foundWords = new Set(); foundCnt = 0; selStart = null;
+  hintsOn = false; allRevd = false; flipDone = false;
+  document.getElementById('foundNum').textContent = '0';
+  document.getElementById('guessBtn').classList.remove('pulse');
+  document.getElementById('sbNote').textContent = 'Hints reveal at 60s remaining';
+  document.getElementById('hintBadge').classList.remove('on');
+  document.getElementById('revealWordsBtn').disabled = false;
+  document.getElementById('revealWordsBtn').style.opacity = '';
+
+  buildWordGrid(C.words);
+  buildClueCards(C.words);
+  renderWordGrid();
+  startTimer();
+  go('game');
+}
+
+// ════════════════════════════════════════
+// GRID GENERATION — horizontal & vertical only
+// ════════════════════════════════════════
+function buildWordGrid(words){
+  grid = Array(GRID_SIZE).fill(null).map(()=>Array(GRID_SIZE).fill(''));
+  placements = [];
+
+  // Only H and V — forward directions only
+  const FORWARD_DIRS = [
+    {dr:0, dc:1},   // right
+    {dr:1, dc:0},   // down
+  ];
+  const REVERSE_DIRS = [
+    {dr:0, dc:-1},  // left
+    {dr:-1, dc:0},  // up
+  ];
+
+  // Pick exactly 1 word index to be reversed
+  const reverseIdx = Math.floor(Math.random() * words.length);
+
+  for(let wi=0; wi<words.length; wi++){
+    const wObj = words[wi];
+    const word = wObj.word;
+    // Use reverse dir for only the chosen word, forward for all others
+    const dirs = wi === reverseIdx ? REVERSE_DIRS : FORWARD_DIRS;
+    let placed = false, tries = 0;
+    while(!placed && tries < 600){
+      tries++;
+      const dir = dirs[Math.floor(Math.random() * dirs.length)];
+      const {dr, dc} = dir;
+      // calculate valid start range
+      let minR=0, maxR=GRID_SIZE-1, minC=0, maxC=GRID_SIZE-1;
+      if(dr > 0) maxR = GRID_SIZE - word.length;
+      if(dr < 0) minR = word.length - 1;
+      if(dc > 0) maxC = GRID_SIZE - word.length;
+      if(dc < 0) minC = word.length - 1;
+      if(maxR < minR || maxC < minC) continue;
+      const r = minR + Math.floor(Math.random()*(maxR-minR+1));
+      const c = minC + Math.floor(Math.random()*(maxC-minC+1));
+      let valid = true; const cells = [];
+      for(let i=0; i<word.length; i++){
+        const nr = r+i*dr, nc = c+i*dc;
+        if(nr<0||nr>=GRID_SIZE||nc<0||nc>=GRID_SIZE){valid=false;break;}
+        if(grid[nr][nc]!=='' && grid[nr][nc]!==word[i]){valid=false;break;}
+        cells.push({r:nr,c:nc});
+      }
+      if(valid){
+        cells.forEach(({r:nr,c:nc},i)=>grid[nr][nc]=word[i]);
+        placements.push({word, cells, wObj});
+        placed = true;
+      }
+    }
+  }
+
+  // Fill blanks with random letters
+  const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for(let r=0;r<GRID_SIZE;r++)
+    for(let c=0;c<GRID_SIZE;c++)
+      if(grid[r][c]==='') grid[r][c]=ABC[Math.floor(Math.random()*ABC.length)];
+}
+
+// ════════════════════════════════════════
+// RENDER GRID
+// ════════════════════════════════════════
+function renderWordGrid(){
+  // Column labels A–H
+  const colDiv = document.getElementById('colLabels');
+  colDiv.innerHTML = '';
+  for(let c=0;c<GRID_SIZE;c++){
+    const l = document.createElement('div');
+    l.className = 'col-lbl'; l.textContent = COLS[c];
+    colDiv.appendChild(l);
+  }
+  // Rows 1–8
+  const rowsDiv = document.getElementById('gridRows');
+  rowsDiv.innerHTML = '';
+  for(let r=0;r<GRID_SIZE;r++){
+    const rowDiv = document.createElement('div'); rowDiv.className = 'grid-row';
+    const rl = document.createElement('div'); rl.className = 'row-lbl'; rl.textContent = r+1;
+    rowDiv.appendChild(rl);
+    for(let c=0;c<GRID_SIZE;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell'; cell.id = `c${r}_${c}`;
+      cell.textContent = grid[r][c];
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.title = `${COLS[c]}${r+1}`;
+      cell.onclick = () => cellClick(r,c);
+      rowDiv.appendChild(cell);
+    }
+    rowsDiv.appendChild(rowDiv);
+  }
+}
+
+// ════════════════════════════════════════
+// BUILD CLUE CARDS
+// ════════════════════════════════════════
+function buildClueCards(words){
+  const list = document.getElementById('clueList');
+  list.innerHTML = '';
+  words.forEach((wObj,i) => {
+    const card = document.createElement('div');
+    card.className = 'ccard'; card.id = `cc${i}`;
+    // blanks between first and last letter
+    const w = wObj.word;
+    const firstLetter = w[0];
+    const lastLetter = w[w.length-1];
+    const middleBlanks = w.length > 2 ? '_ '.repeat(w.length-2).trim() : '';
+    const hintDisplay = w.length === 1
+      ? firstLetter
+      : w.length === 2
+        ? `${firstLetter} ${lastLetter}`
+        : `${firstLetter} ${middleBlanks} ${lastLetter}`;
+    card.innerHTML = `
+      <div class="v-hidden"><span class="cv-dots">• • •</span><span class="cv-lbl">Not found yet</span></div>
+      <div class="v-hint">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="cv-letter">${hintDisplay}</span>
+        </div>
+        <div class="cv-hlbl">💡 First &amp; last letter hint</div>
+      </div>
+      <div class="v-found">
+        <div class="cv-wordrow">
+          <span class="cv-emoji">${wObj.emoji}</span>
+          <span class="cv-word">${wObj.word}</span>
+        </div>
+        <div class="cv-type">${wObj.label}</div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function setCardState(idx, state){
+  const card = document.getElementById(`cc${idx}`);
+  if(!card) return;
+  card.className = `ccard s-${state}`;
+}
+
+// ════════════════════════════════════════
+// CELL CLICK LOGIC
+// ════════════════════════════════════════
+function cellClick(r,c){
+  const el = document.getElementById(`c${r}_${c}`);
+  if(el.classList.contains('found')||el.classList.contains('found-auto')) return;
+
+  if(!selStart){
+    selStart = {r,c};
+    el.classList.add('start');
+    document.getElementById('tbHint').textContent = `Start: ${COLS[c]}${r+1} — now click the end letter`;
+    return;
+  }
+
+  // same cell → deselect
+  if(selStart.r===r && selStart.c===c){ clearSel(); return; }
+
+  const cells = getLine(selStart.r, selStart.c, r, c);
+  if(!cells){
+    clearSel();
+    selStart = {r,c};
+    el.classList.add('start');
+    document.getElementById('tbHint').textContent = `Start: ${COLS[c]}${r+1} — now click the end letter`;
+    return;
+  }
+
+  // show selection
+  cells.forEach(({r:cr,c:cc})=>{
+    const e = document.getElementById(`c${cr}_${cc}`);
+    if(e && !e.classList.contains('found') && !e.classList.contains('found-auto')) e.classList.add('selecting');
+  });
+
+  // build word from selected cells (check forward and reversed — 1 word is placed backwards)
+  const word = cells.map(({r:cr,c:cc})=>grid[cr][cc]).join('');
+  const wordRev = word.split('').reverse().join('');
+
+  const match = placements.find(p => !foundWords.has(p.word) && (p.word === word || p.word === wordRev));
+
+  if(match){
+    // ✅ FOUND
+    match.cells.forEach(({r:cr,c:cc})=>{
+      const e = document.getElementById(`c${cr}_${cc}`);
+      if(e){ e.classList.remove('selecting','start','found-auto'); e.classList.add('found'); }
+    });
+    foundWords.add(match.word);
+    // find card index
+    const wIdx = COUNTRIES[curIdx].words.findIndex(w=>w.word===match.word);
+    setCardState(wIdx, 'found');
+    foundCnt++;
+    document.getElementById('foundNum').textContent = foundCnt;
+    document.getElementById('tbHint').textContent = `✓ "${match.word}" found! Keep searching...`;
+    if(foundCnt === 5){
+      stopTimer();
+      document.getElementById('guessBtn').classList.add('pulse');
+      document.getElementById('sbNote').textContent = 'All 5 found! Reveal the country!';
+    }
+  } else {
+    // ❌ WRONG
+    cells.forEach(({r:cr,c:cc})=>{
+      const e = document.getElementById(`c${cr}_${cc}`);
+      if(e){ e.classList.remove('selecting','start'); e.classList.add('wrong'); setTimeout(()=>e.classList.remove('wrong'),430); }
+    });
+    document.getElementById('tbHint').textContent = 'Not a hidden word — try a different selection!';
+  }
+
+  clearSel();
+}
+
+// Only horizontal or vertical line
+function getLine(r1,c1,r2,c2){
+  const dr = r2-r1, dc = c2-c1;
+  if(dr===0 && dc===0) return null;
+  // must be purely horizontal or purely vertical
+  if(dr !== 0 && dc !== 0) return null;
+  const steps = Math.max(Math.abs(dr), Math.abs(dc));
+  const sr = dr===0 ? 0 : dr/Math.abs(dr);
+  const sc = dc===0 ? 0 : dc/Math.abs(dc);
+  const cells = [];
+  for(let i=0;i<=steps;i++) cells.push({r:r1+i*sr, c:c1+i*sc});
+  return cells;
+}
+
+function clearSel(){
+  document.querySelectorAll('.cell.start,.cell.selecting').forEach(e=>e.classList.remove('start','selecting'));
+  selStart = null;
+}
+
+// ════════════════════════════════════════
+// TIMER
+// ════════════════════════════════════════
+function startTimer(){
+  timeLeft = TOTAL_TIME;
+  const num = document.getElementById('tNum');
+  num.textContent = timeLeft; num.className = 't-big'; num.style.color = '';
+  document.getElementById('tFill').style.width = '100%';
+  document.getElementById('tStatus').textContent = '⏱ Search the grid — find all 5 hidden words!';
+  if(timerInt) clearInterval(timerInt);
+  timerInt = setInterval(()=>{
+    timeLeft--;
+    num.textContent = timeLeft;
+    document.getElementById('tFill').style.width = (timeLeft/TOTAL_TIME*100)+'%';
+    if(timeLeft <= 30) num.className = 't-big danger';
+    else if(timeLeft <= HINT_AT) num.className = 't-big warn';
+    // show hints
+    if(timeLeft === HINT_AT && !hintsOn) showHints();
+    if(timeLeft <= 0){
+      clearInterval(timerInt);
+      document.getElementById('tStatus').textContent = "⏹ Time's up — reveal words or guess!";
+      document.getElementById('guessBtn').classList.add('pulse');
+    }
+  },1000);
+}
+
+function stopTimer(){
+  clearInterval(timerInt);
+  document.getElementById('tStatus').textContent = '⏹ Timer stopped';
+  document.getElementById('tNum').style.color = 'var(--dim)';
+}
+
+// ════════════════════════════════════════
+// HINTS — show starting letter at 60s
+// ════════════════════════════════════════
+function showHints(){
+  hintsOn = true;
+  document.getElementById('hintBadge').classList.add('on');
+  document.getElementById('tStatus').textContent = '💡 Hint! First & last letters now showing in sidebar!';
+  document.getElementById('sbNote').textContent = 'First & last letter hints active!';
+  COUNTRIES[curIdx].words.forEach((wObj,i)=>{
+    if(!foundWords.has(wObj.word)) setCardState(i,'hint');
+  });
+}
+
+// ════════════════════════════════════════
+// REVEAL ALL WORDS
+// ════════════════════════════════════════
+function revealAll(){
+  allRevd = true;
+  stopTimer();
+  document.getElementById('tStatus').textContent = '✓ All words revealed in the grid!';
+  placements.forEach(p=>{
+    if(!foundWords.has(p.word)){
+      p.cells.forEach(({r,c})=>{
+        const e = document.getElementById(`c${r}_${c}`);
+        if(e){ e.classList.remove('selecting','start'); e.classList.add('found-auto'); }
+      });
+      foundWords.add(p.word);
+      const wIdx = COUNTRIES[curIdx].words.findIndex(w=>w.word===p.word);
+      setCardState(wIdx,'auto');
+    }
+  });
+  foundCnt = 5;
+  document.getElementById('foundNum').textContent = '5';
+  document.getElementById('sbNote').textContent = 'All words shown — guess the country!';
+  document.getElementById('guessBtn').classList.add('pulse');
+  document.getElementById('revealWordsBtn').disabled = true;
+  document.getElementById('revealWordsBtn').style.opacity = '.35';
+}
+
+// ════════════════════════════════════════
+// GO REVEAL SCREEN
+// ════════════════════════════════════════
+function goReveal(){
+  stopTimer();
+  const C = COUNTRIES[curIdx];
+
+  // Build recap of words
+  const recap = document.getElementById('revRecap');
+  recap.innerHTML = '';
+  C.words.forEach(wObj=>{
+    const isAuto = !document.getElementById(`c${placements.find(p=>p.word===wObj.word)?.cells[0]?.r}_${placements.find(p=>p.word===wObj.word)?.cells[0]?.c}`)?.classList.contains('found');
+    const span = document.createElement('div');
+    span.className = 'rr-w' + (isAuto ? ' auto' : '');
+    span.textContent = wObj.emoji + ' ' + wObj.word;
+    recap.appendChild(span);
+  });
+
+  // set flip card content
+  document.getElementById('rFlag').textContent = C.flag;
+  document.getElementById('rName').textContent = C.name.toUpperCase();
+  document.getElementById('flipCard').classList.remove('flipped');
+  flipDone = false;
+  document.getElementById('awardWrap').style.display = 'none';
+  document.getElementById('revNav').style.display = 'none';
+
+  // award points value
+  const playerFound = placements.filter(p=>
+    document.getElementById(`c${p.cells[0].r}_${p.cells[0].c}`)?.classList.contains('found')
+  ).length;
+  const pts = calcPts(playerFound);
+  ['awP1','awP2','awP3'].forEach(id=>document.getElementById(id).textContent=pts);
+  document.getElementById('awNA').textContent = teamA;
+  document.getElementById('awNB').textContent = teamB;
+
+  go('reveal');
+}
+
+function calcPts(n){
+  if(n>=5)return 20; if(n>=3)return 15; if(n>=1)return 10; return 5;
+}
+
+// ════════════════════════════════════════
+// FLIP CARD
+// ════════════════════════════════════════
+function doFlip(){
+  if(flipDone) return;
+  flipDone = true;
+  document.getElementById('flipCard').classList.add('flipped');
+  setTimeout(()=>{
+    document.getElementById('awardWrap').style.display = 'flex';
+    document.getElementById('revNav').style.display = 'flex';
+  }, 950);
+}
+
+// ════════════════════════════════════════
+// AWARD POINTS
+// ════════════════════════════════════════
+function award(who){
+  const pts = parseInt(document.getElementById('awP1').textContent)||20;
+  if(who==='A'||who==='BOTH') scoreA += pts;
+  if(who==='B'||who==='BOTH') scoreB += pts;
+  document.getElementById('sPA').textContent = scoreA;
+  document.getElementById('sPB').textContent = scoreB;
+  solved.add(curIdx);
+  const toast = document.getElementById('toast');
+  toast.textContent = who==='NONE'?'😬 No pts':who==='BOTH'?`+${pts} Both!`:`+${pts} pts!`;
+  toast.style.color = who==='NONE'?'var(--dim)':'var(--gold)';
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),1200);
+  document.querySelectorAll('.aw-btn').forEach(b=>{b.disabled=true;b.style.opacity='.3';});
+}
+
+// ════════════════════════════════════════
+// CULTURE SCREEN
+// ════════════════════════════════════════
+function goCulture(){
+  const C = COUNTRIES[curIdx];
+  document.getElementById('cFlag').textContent = C.flag;
+  document.getElementById('cName').textContent = C.name.toUpperCase();
+  document.getElementById('cFact').innerHTML = C.culture;
+  go('culture');
+}
+
+// ════════════════════════════════════════
+// SCOREBOARD
+// ════════════════════════════════════════
+function goScoreboard(){
+  const win = scoreA>scoreB?'A':scoreB>scoreA?'B':null;
+  document.getElementById('dbNA').textContent = teamA.toUpperCase();
+  document.getElementById('dbNB').textContent = teamB.toUpperCase();
+  document.getElementById('dbPA').textContent = scoreA;
+  document.getElementById('dbPB').textContent = scoreB;
+  document.getElementById('dbA').className = 'duel-box'+(win==='A'?' win':'');
+  document.getElementById('dbB').className = 'duel-box'+(win==='B'?' win':'');
+  document.querySelectorAll('.crown').forEach(e=>e.remove());
+  if(win){
+    const c=document.createElement('div');c.className='crown';c.textContent='👑';
+    document.getElementById('db'+win).appendChild(c);
+    document.getElementById('sbTitle').textContent=(win==='A'?teamA:teamB).toUpperCase()+' LEADS!';
+  } else {
+    document.getElementById('sbTitle').textContent="IT'S A DRAW!";
+  }
+  document.getElementById('casesBar').textContent=`${solved.size} / 10 COUNTRIES SOLVED`;
+  go('scoreboard');
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+buildLobby();
+</script>
+</body>
+</html>
