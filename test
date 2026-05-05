@@ -1,0 +1,209 @@
+Below is **one consolidated, detailed BA‑focused report** that explains **how mainframes are used in Group Disability projects**, **what reports are generated**, **what Business Analysts do**, and **what documents BAs typically create**, **grounded strictly in the enterprise sources found**. I’ve kept it structured and implementation‑accurate, aligned to how your team actually works in Group L\&D.
+
+***
+
+# **Mainframe Usage, Reporting & BA Role in Group Disability Projects**
+
+## 1. Role of Mainframe Systems in Group Disability
+
+In Group Disability (STD & LTD), the **mainframe remains the system of record** for core policy, plan, and claim data. Modern front‑end applications do **not replace** the mainframe; instead, they **orchestrate and retrieve data from it**.
+
+### Key Mainframe Responsibilities
+
+*   Storage of **policy master data** (PAS/EAS DB2 tables)
+*   Storage of **claim‑level data**
+*   Execution of **business rules** via application and data layer programs
+*   Generating **regulatory and operational reports**
+
+The interaction pattern is consistently:
+
+> Front‑end app → CICS Webservice → Application Layer Program → Data Layer → DB2 Tables
+
+This architecture is explicitly documented in the **Disability Claims Tracking (DCT)** workflow. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+***
+
+## 2. How Group Disability Applications Use the Mainframe
+
+### Example: DCT (Disability Claims Tracking)
+
+DCT is a business‑facing application that **does not hold data itself**. Instead:
+
+*   DCT triggers **CICS Webservices** such as **GH85AWBS**
+*   The application layer routes requests to programs like **GETBMMOD**
+*   Data is retrieved from **PAS/EAS DB2 tables** using claim identifiers (Claim ID, Office ID, COPI)
+*   Copybook programs (e.g., **GSDC142M**) define data structures
+*   SQL is executed on the mainframe DB2 environment
+
+This ensures **real‑time, authoritative data** for claims, provisions, and eligibility views. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+### Other Supporting Systems
+
+*   **Ultera**: Front end for disability workflows
+*   **FileNet**: Document storage
+*   **MESH / MOVEit**: Secure file transfer
+*   **CICS Web Services**: Legacy‑to‑modern integration layer
+
+These systems **depend on mainframe data**, not replace it. [\[Co-op/Inte...repository \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/461407547/Co-op+Intern+repository)
+
+***
+
+## 3. Reports Generated from the Mainframe (Group Disability)
+
+### 3.1 Operational & Financial Reports
+
+One confirmed example is the **YMFR (Yearly Monthly Financial Report)**:
+
+*   Report ID pattern: `CS14.YMFR.REPORT.G*`
+*   Used for **Group Disability financial reconciliation**
+*   Generated directly from mainframe jobs
+*   Requested and tracked via intake tickets
+
+This is a **production‑run mainframe report**, not an analytic dashboard. [\[GITB-11767...Disability \| Jira\]](https://prd-can-lifeco.atlassian.net/browse/GITB-11767)
+
+### 3.2 Plan Provision & Claim Reports
+
+From DCT, users generate:
+
+*   **PPS (Plan Provision Summary)** reports
+*   Printed STD and LTD plan outputs
+*   Claim‑specific extracts routed via data layers (G‑series programs)
+
+These reports rely on:
+
+*   DB2 table joins
+*   Data layer program routing
+*   Defined copybooks
+
+ [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+***
+
+## 4. Business Analyst Role in Group Disability Mainframe Projects
+
+In Group Disability, BAs act as **translation and control points** between:
+
+*   Business users (claims, operations)
+*   Mainframe developers
+*   Digital / data platforms
+
+### Core BA Responsibilities
+
+#### 4.1 Requirements & Business Rules
+
+*   Document **plan provisions**, eligibility rules, and claim logic
+*   Translate business language into **mainframe‑consumable rules**
+*   Validate whether logic belongs in:
+    *   Application layer
+    *   Data layer
+    *   Front‑end only
+
+Supported by DCT and Ultera documentation. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking), [\[Disability...tion (RAG) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/836469099/Disability+Retrieval+Augmented+Generation+RAG)
+
+#### 4.2 Data Mapping & Lineage
+
+*   Map UI fields (e.g., PPS screen fields) to:
+    *   Mainframe copybooks
+    *   DB2 tables
+*   Identify required keys (Claim ID, Office ID, COPI)
+*   Document **source‑to‑target mappings**
+
+These mappings are essential for mainframe SQL validation. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+#### 4.3 Report Enablement
+
+*   Define report scope (e.g., YMFR, PPS)
+*   Identify:
+    *   Required parameters
+    *   Output format
+    *   Frequency
+*   Coordinate job execution and UAT validation
+
+ [\[GITB-11767...Disability \| Jira\]](https://prd-can-lifeco.atlassian.net/browse/GITB-11767)
+
+#### 4.4 Access & Controls (Supporting Role)
+
+*   Participate in access discussions when mainframe data flows to analytics or reporting platforms
+*   Validate role‑based access assumptions for downstream consumers
+
+ [\[FW: Access Model \| Outlook\]](https://outlook.office365.com/owa/?ItemID=AQMkADZhNTllODZjLWQ5NDEtNDA5Zi05ODZmLTg0NjM4ZTVjN2UxOABGAAADQenkYIKLSUaSXcm3uCLomgcATQI9cZDCuEa07vhq8EmhwwAAAgEMAAAATQI9cZDCuEa07vhq8EmhwwAEtXakdAAAAA%3d%3d&exvsurl=1&viewmodel=ReadMessageItem)
+
+***
+
+## 5. BA Documents Created in Group Disability Projects
+
+Below are **actual BA document types tied to the systems found**, not generic templates.
+
+### 5.1 Business Requirements Document (BRD)
+
+*   Scope of disability enhancement or report
+*   Business definitions of STD/LTD logic
+*   Regulatory considerations
+
+Referenced across Group Disability initiatives. [\[Disability \| SharePoint\]](https://769372677.sharepoint.com/sites/BD/SitePages/Disability.aspx?web=1)
+
+### 5.2 Functional Specification / FSD
+
+*   DCT → Mainframe interaction flow
+*   Application vs data layer responsibility
+*   Error scenarios and fallbacks
+
+Aligned with documented DCT workflows. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+### 5.3 Data Mapping Document
+
+*   UI field → copybook → DB2 column mapping
+*   PPS field‑level lineage
+*   Mandatory for SQL validation and UAT
+
+Explicitly required for PPS and data layer programs. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+### 5.4 Report Specification Document
+
+*   Report ID (e.g., YMFR)
+*   Selection criteria
+*   Totals & reconciliation rules
+
+Used in report run requests. [\[GITB-11767...Disability \| Jira\]](https://prd-can-lifeco.atlassian.net/browse/GITB-11767)
+
+### 5.5 UAT Scenarios & Acceptance Criteria
+
+*   Business validation of:
+    *   Plan provisions
+    *   Claim extracts
+    *   Printed outputs
+*   Expected vs actual values
+
+Implicitly required for DCT‑to‑mainframe validation. [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+
+***
+
+## 6. End‑to‑End Summary
+
+| Area            | Mainframe Role    | BA Contribution                         |
+| --------------- | ----------------- | --------------------------------------- |
+| Claims data     | System of record  | Rule clarification & validation         |
+| Plan provisions | Stored & executed | Mapping & interpretation                |
+| Reports         | Batch/job‑based   | Requirement & reconciliation definition |
+| Integrations    | CICS Webservices  | Functional flow documentation           |
+| Data lineage    | Copybooks & DB2   | Source‑to‑target mapping                |
+
+***
+
+## 7. Key Reference Documents (for BA Use)
+
+*   DCT & Mainframe Workflow – Confluence (Group Customer Knowledge Hub) [\[DCT (Disab...Tracking) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/176943345/DCT+Disability+Claims+Tracking)
+*   Ultera / eDisability Architecture & Webservices [\[Disability...tion (RAG) \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/836469099/Disability+Retrieval+Augmented+Generation+RAG)
+*   Group Disability YMFR Report Work Request [\[GITB-11767...Disability \| Jira\]](https://prd-can-lifeco.atlassian.net/browse/GITB-11767)
+*   Technology Definitions (Mainframe, CICS, DB2) [\[Co-op/Inte...repository \| Confluence\]](https://prd-can-lifeco.atlassian.net/wiki/spaces/GCKH/pages/461407547/Co-op+Intern+repository)
+*   Group Disability Knowledge Hub [\[Disability \| SharePoint\]](https://769372677.sharepoint.com/sites/BD/SitePages/Disability.aspx?web=1)
+
+***
+
+If you want, next I can:
+
+*   Convert this into a **BA onboarding document**
+*   Create a **single‑page architecture diagram (textual or PPT‑ready)**
+*   Tailor it specifically to **DCT, Ultera, or reporting BA roles only**
+
+Just tell me which direction you want.
